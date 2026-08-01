@@ -55,14 +55,35 @@ if uploaded_file:
 
     pdf = PdfReader(uploaded_file)
 
+    all_chunks = []
+
+    splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,
+            chunk_overlap=100
+    )
+
     text = ""
 
-    for page in pdf.pages:
+    for page_number, page in enumerate(pdf.pages, start=1):
+
         page_text = page.extract_text()
 
         if page_text:
+
             text += page_text
 
+            page_chunks = splitter.split_text(page_text)
+
+            for chunk in page_chunks:
+
+                all_chunks.append(
+                    {
+                        "text": chunk,
+                        "page": page_number
+                    }
+                )
+
+    
     st.success("PDF loaded successfully")
 
     st.write(
@@ -72,11 +93,7 @@ if uploaded_file:
     # --------------------------------------
     # Chunk document
     # --------------------------------------
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=100
-    )
-
+    
     chunks = splitter.split_text(text)
 
     st.write(
@@ -86,16 +103,33 @@ if uploaded_file:
     # --------------------------------------
     # Create embeddings
     # --------------------------------------
+    
+    documents = []
+    metadatas = []
     embeddings = []
 
-    for chunk in chunks:
+    for chunk_data in all_chunks:
+
+        documents.append(
+            chunk_data["text"]
+        )
+
+        metadatas.append(
+            {
+                "page": chunk_data["page"]
+            }
+        )
 
         embedding = model.encode(
-            chunk
+            chunk_data["text"]
         ).tolist()
 
         embeddings.append(embedding)
 
+    st.write(f"Documents: {len(documents)}")
+    st.write(f"Embeddings: {len(embeddings)}")
+    
+        
     # --------------------------------------
     # Clear previous data
     # --------------------------------------
@@ -109,13 +143,20 @@ if uploaded_file:
     # --------------------------------------
     # Store in ChromaDB
     # --------------------------------------
-    ids = [str(i) for i in range(len(chunks))]
+    ids = [str(i) for i in range(len(documents))]
 
     collection.add(
         ids=ids,
-        documents=chunks,
-        embeddings=embeddings
+        documents=documents,
+        embeddings=embeddings,
+        metadatas=metadatas
     )
+
+    # collection.add(
+    #    ids=ids,
+    #    documents=chunks,
+    #    embeddings=embeddings
+    # )
 
     st.success("Document indexed")
 
@@ -174,6 +215,28 @@ Question:
         st.subheader("Answer")
 
         st.write(answer)
+
+        st.write("Sources")
+
+        #st.write(type(results["metadatas"]))
+        #st.write(results["metadatas"])
+
+
+        retrieved_metadata = results["metadatas"][0]
+
+        pages = set()
+
+        for metadata in retrieved_metadata:
+            pages.add(metadata["page"])
+
+        st.subheader("Sources")
+
+        for page in sorted(pages):
+            st.write(f"Page {page}")
+
+        # for metadata in results["metadatas"]: 
+        #    st.write(f"Page {metadata['page']}"
+        #)
 
         with st.expander(
             "View Retrieved Chunks"
