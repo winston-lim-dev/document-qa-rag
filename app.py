@@ -180,20 +180,23 @@ if uploaded_file:
             retrieved_chunks
         )
 
-        prompt = f"""
-Answer the question using ONLY the
-information provided below.
 
-If the answer is not found in the context,
-say "I could not find the answer in the document."
+        prompt = f"""
+You are a helpful document assistant.
+
+Use the retrieved document context to answer the question.
+
+If the answer is partially available,
+provide the best answer you can.
 
 Context:
 {context}
 
 Question:
 {question}
-"""
 
+Answer:
+"""
         with st.spinner(
             "Generating answer..."
         ):
