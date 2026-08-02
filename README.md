@@ -63,7 +63,6 @@ Page 12
 Page 15
 
 ## Screenshots
-
 ### Upload Document
 
 screenshots/home.png
@@ -72,16 +71,7 @@ screenshots/home.png
 
 screenshots/answer.png
 
-## Installation
-
-```bash
-git clone <repo-url>
-cd document-qa-rag
-pip install -r requirements.txt
-streamlit run app.py
-
 ## Roadmap
-
 ### Completed
 
 - [x] PDF Upload
@@ -95,3 +85,11 @@ streamlit run app.py
 - [ ] Chat History
 - [ ] Conversation Memory
 - [ ] Evaluation Dashboard
+
+## Installation
+
+```bash
+git clone <repo-url>
+cd document-qa-rag
+pip install -r requirements.txt
+streamlit run app.py
