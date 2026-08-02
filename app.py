@@ -127,8 +127,8 @@ if uploaded_file:
         embeddings.append(embedding)
 
     st.write(f"Documents: {len(documents)}")
+    st.write(f"Metadatas: {len(metadatas)}")
     st.write(f"Embeddings: {len(embeddings)}")
-    
         
     # --------------------------------------
     # Clear previous data
@@ -151,12 +151,6 @@ if uploaded_file:
         embeddings=embeddings,
         metadatas=metadatas
     )
-
-    # collection.add(
-    #    ids=ids,
-    #    documents=chunks,
-    #    embeddings=embeddings
-    # )
 
     st.success("Document indexed")
 
@@ -216,14 +210,9 @@ Answer:
             )
 
         st.subheader("Answer")
-
         st.write(answer)
 
         st.write("Sources")
-
-        #st.write(type(results["metadatas"]))
-        #st.write(results["metadatas"])
-
 
         retrieved_metadata = results["metadatas"][0]
 
@@ -236,11 +225,7 @@ Answer:
 
         for page in sorted(pages):
             st.write(f"Page {page}")
-
-        # for metadata in results["metadatas"]: 
-        #    st.write(f"Page {metadata['page']}"
-        #)
-
+       
         with st.expander(
             "View Retrieved Chunks"
         ):
