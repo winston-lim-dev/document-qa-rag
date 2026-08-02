@@ -85,21 +85,13 @@ if uploaded_file:
 
     
     st.success("PDF loaded successfully")
-
-    st.write(
-        f"Document length: {len(text)} characters"
-    )
-
+    
     # --------------------------------------
     # Chunk document
     # --------------------------------------
     
     chunks = splitter.split_text(text)
-
-    st.write(
-        f"Chunks created: {len(chunks)}"
-    )
-
+    
     # --------------------------------------
     # Create embeddings
     # --------------------------------------
@@ -125,10 +117,6 @@ if uploaded_file:
         ).tolist()
 
         embeddings.append(embedding)
-
-    st.write(f"Documents: {len(documents)}")
-    st.write(f"Metadatas: {len(metadatas)}")
-    st.write(f"Embeddings: {len(embeddings)}")
         
     # --------------------------------------
     # Clear previous data
