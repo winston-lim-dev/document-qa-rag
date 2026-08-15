@@ -20,3 +20,11 @@ class Chunk:
     page: int
     chunk_id: str
     text: str
+
+
+@dataclass(frozen=True)
+class RetrievalResult:
+    """A retrieved chunk and its Chroma distance (lower is closer)."""
+
+    chunk: Chunk
+    distance: float

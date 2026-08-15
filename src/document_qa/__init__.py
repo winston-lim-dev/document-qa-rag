@@ -1,6 +1,14 @@
 """Core package for the document QA application."""
 
 from .ingestion import IngestionError, ingest_pdf
-from .models import Chunk, Document
+from .models import Chunk, Document, RetrievalResult
+from .retrieval import DocumentRetriever
 
-__all__ = ["Chunk", "Document", "IngestionError", "ingest_pdf"]
+__all__ = [
+    "Chunk",
+    "Document",
+    "DocumentRetriever",
+    "IngestionError",
+    "RetrievalResult",
+    "ingest_pdf",
+]

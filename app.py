@@ -1,32 +1,19 @@
 import streamlit as st
-from sentence_transformers import SentenceTransformer
 from ollama import chat
-import chromadb
 
 from src.document_qa.ingestion import IngestionError, ingest_pdf
+from src.document_qa.retrieval import DocumentRetriever
 
 
 # --------------------------------------
-# Load embedding model once
+# Load retrieval resources once
 # --------------------------------------
 @st.cache_resource
-def load_model():
-    return SentenceTransformer("all-MiniLM-L6-v2")
+def load_retriever():
+    return DocumentRetriever.persistent()
 
 
-model = load_model()
-
-
-# --------------------------------------
-# ChromaDB persistent storage
-# --------------------------------------
-client = chromadb.PersistentClient(
-    path="chroma_db"
-)
-
-collection = client.get_or_create_collection(
-    name="documents"
-)
+retriever = load_retriever()
 
 
 # --------------------------------------
@@ -60,55 +47,7 @@ if uploaded_file:
 
     st.success("PDF loaded successfully")
 
-    # Create embeddings
-    # --------------------------------------
-    
-    documents = []
-    metadatas = []
-    embeddings = []
-
-    for chunk_data in all_chunks:
-
-        documents.append(
-            chunk_data.text
-        )
-
-        metadatas.append(
-            {
-                "page": chunk_data.page,
-                "document_id": chunk_data.document_id,
-                "filename": chunk_data.filename,
-                "chunk_id": chunk_data.chunk_id,
-            }
-        )
-
-        embedding = model.encode(
-            chunk_data.text
-        ).tolist()
-
-        embeddings.append(embedding)
-        
-    # --------------------------------------
-    # Clear previous data
-    # --------------------------------------
-    existing = collection.get()
-
-    if len(existing["ids"]) > 0:
-        collection.delete(
-            ids=existing["ids"]
-        )
-
-    # --------------------------------------
-    # Store in ChromaDB
-    # --------------------------------------
-    ids = [chunk.chunk_id for chunk in all_chunks]
-
-    collection.add(
-        ids=ids,
-        documents=documents,
-        embeddings=embeddings,
-        metadatas=metadatas
-    )
+    retriever.index(all_chunks)
 
     st.success("Document indexed")
 
@@ -117,16 +56,8 @@ if uploaded_file:
     # --------------------------------------
     if question:
 
-        query_embedding = model.encode(
-            question
-        ).tolist()
-
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            n_results=3
-        )
-
-        retrieved_chunks = results["documents"][0]
+        retrieval_results = retriever.retrieve(question, top_k=3)
+        retrieved_chunks = [result.chunk.text for result in retrieval_results]
 
         context = "\n\n".join(
             retrieved_chunks
@@ -172,12 +103,7 @@ Answer:
 
         st.write("Sources")
 
-        retrieved_metadata = results["metadatas"][0]
-
-        pages = set()
-
-        for metadata in retrieved_metadata:
-            pages.add(metadata["page"])
+        pages = {result.chunk.page for result in retrieval_results}
 
         st.subheader("Sources")
 
