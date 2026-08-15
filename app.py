@@ -1,9 +1,9 @@
 import streamlit as st
-from pypdf import PdfReader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from ollama import chat
 import chromadb
+
+from src.document_qa.ingestion import IngestionError, ingest_pdf
 
 
 # --------------------------------------
@@ -52,47 +52,14 @@ question = st.text_input(
 # PDF Processing
 # --------------------------------------
 if uploaded_file:
+    try:
+        all_chunks = ingest_pdf(uploaded_file, uploaded_file.name)
+    except IngestionError as error:
+        st.error(str(error))
+        st.stop()
 
-    pdf = PdfReader(uploaded_file)
-
-    all_chunks = []
-
-    splitter = RecursiveCharacterTextSplitter(
-            chunk_size=500,
-            chunk_overlap=100
-    )
-
-    text = ""
-
-    for page_number, page in enumerate(pdf.pages, start=1):
-
-        page_text = page.extract_text()
-
-        if page_text:
-
-            text += page_text
-
-            page_chunks = splitter.split_text(page_text)
-
-            for chunk in page_chunks:
-
-                all_chunks.append(
-                    {
-                        "text": chunk,
-                        "page": page_number
-                    }
-                )
-
-    
     st.success("PDF loaded successfully")
-    
-    # --------------------------------------
-    # Chunk document
-    # --------------------------------------
-    
-    chunks = splitter.split_text(text)
-    
-    # --------------------------------------
+
     # Create embeddings
     # --------------------------------------
     
@@ -103,17 +70,20 @@ if uploaded_file:
     for chunk_data in all_chunks:
 
         documents.append(
-            chunk_data["text"]
+            chunk_data.text
         )
 
         metadatas.append(
             {
-                "page": chunk_data["page"]
+                "page": chunk_data.page,
+                "document_id": chunk_data.document_id,
+                "filename": chunk_data.filename,
+                "chunk_id": chunk_data.chunk_id,
             }
         )
 
         embedding = model.encode(
-            chunk_data["text"]
+            chunk_data.text
         ).tolist()
 
         embeddings.append(embedding)
@@ -131,7 +101,7 @@ if uploaded_file:
     # --------------------------------------
     # Store in ChromaDB
     # --------------------------------------
-    ids = [str(i) for i in range(len(documents))]
+    ids = [chunk.chunk_id for chunk in all_chunks]
 
     collection.add(
         ids=ids,
