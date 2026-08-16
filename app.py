@@ -6,85 +6,81 @@ from src.document_qa.retrieval import DocumentRetriever
 from src.document_qa.service import DocumentQAService
 
 
-# --------------------------------------
-# Load retrieval resources once
-# --------------------------------------
 @st.cache_resource
-def load_retriever():
+def load_retriever() -> DocumentRetriever:
+    """Load the embedding model and persistent collection once per app process."""
     return DocumentRetriever.persistent()
 
 
-retriever = load_retriever()
+st.title("📄 Winston's Local RAG Assistant")
+st.write("Upload a PDF and ask questions about it.")
+
+try:
+    retriever = load_retriever()
+except Exception as error:
+    st.error(f"Unable to initialize local retrieval: {error}")
+    st.stop()
+
 qa_service = DocumentQAService(retriever, OllamaGenerator())
 
+uploaded_file = st.file_uploader("Upload PDF", type="pdf")
+question = st.text_input("Ask a question about the document")
 
-# --------------------------------------
-# UI
-# --------------------------------------
-st.title("📄 Winston's Local RAG Assistant")
-
-st.write(
-    "Upload a PDF and ask questions about it."
-)
-
-uploaded_file = st.file_uploader(
-    "Upload PDF",
-    type="pdf"
-)
-
-question = st.text_input(
-    "Ask a question about the document"
-)
-
-
-# --------------------------------------
-# PDF Processing
-# --------------------------------------
 if uploaded_file:
     try:
-        all_chunks = ingest_pdf(uploaded_file, uploaded_file.name)
+        chunks = ingest_pdf(uploaded_file, uploaded_file.name)
     except IngestionError as error:
-        st.error(str(error))
+        st.error(f"This PDF cannot be indexed: {error}")
+        st.stop()
+    except Exception as error:
+        st.error(f"Unable to read this PDF: {error}")
         st.stop()
 
     st.success("PDF loaded successfully")
 
-    retriever.index(all_chunks)
+    document_id = chunks[0].document_id
+    if st.session_state.get("indexed_document_id") != document_id:
+        try:
+            retriever.index(chunks)
+        except Exception as error:
+            st.error(f"Unable to index this document: {error}")
+            st.stop()
+        st.session_state["indexed_document_id"] = document_id
+        st.success("Document indexed")
+    else:
+        st.caption("Document already indexed for this session.")
 
-    st.success("Document indexed")
-
-    # --------------------------------------
-    # Ask Question
-    # --------------------------------------
     if question:
-        with st.spinner(
-            "Generating answer..."
-        ):
-            result = qa_service.answer(question, top_k=3)
+        try:
+            with st.spinner("Retrieving evidence and generating answer..."):
+                result = qa_service.answer(question, top_k=3)
+        except Exception as error:
+            st.error(
+                "Unable to answer the question. Confirm that Ollama is running "
+                f"and the local models are available: {error}"
+            )
+            st.stop()
 
         st.subheader("Answer")
         st.write(result.answer)
+        if not result.has_sufficient_evidence:
+            st.info("No usable retrieval evidence was available for generation.")
 
         st.subheader("Sources")
+        st.caption("Chroma distance is shown as returned; lower means closer.")
+        for index, evidence in enumerate(result.evidence, start=1):
+            st.write(
+                f"[S{index}] {evidence.chunk.filename} — Page "
+                f"{evidence.chunk.page} — Distance {evidence.distance:.4f}"
+            )
 
-        sources = {
-            (evidence.chunk.filename, evidence.chunk.page)
-            for evidence in result.evidence
-        }
-        for filename, page in sorted(sources):
-            st.write(f"{filename} — Page {page}")
-       
-        with st.expander(
-            "View Retrieved Chunks"
-        ):
+        if not result.evidence:
+            st.caption("No sources to display.")
 
-            for i, evidence in enumerate(
-                result.evidence,
-                start=1
-            ):
-
+        with st.expander("View retrieved evidence"):
+            for index, evidence in enumerate(result.evidence, start=1):
                 st.markdown(
-                    f"### Chunk {i}"
+                    f"### [S{index}] {evidence.chunk.filename}, "
+                    f"page {evidence.chunk.page}"
                 )
-
                 st.write(evidence.chunk.text)
