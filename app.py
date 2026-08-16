@@ -1,8 +1,9 @@
 import streamlit as st
-from ollama import chat
 
+from src.document_qa.generation import OllamaGenerator
 from src.document_qa.ingestion import IngestionError, ingest_pdf
 from src.document_qa.retrieval import DocumentRetriever
+from src.document_qa.service import DocumentQAService
 
 
 # --------------------------------------
@@ -14,6 +15,7 @@ def load_retriever():
 
 
 retriever = load_retriever()
+qa_service = DocumentQAService(retriever, OllamaGenerator())
 
 
 # --------------------------------------
@@ -55,67 +57,29 @@ if uploaded_file:
     # Ask Question
     # --------------------------------------
     if question:
-
-        retrieval_results = retriever.retrieve(question, top_k=3)
-        retrieved_chunks = [result.chunk.text for result in retrieval_results]
-
-        context = "\n\n".join(
-            retrieved_chunks
-        )
-
-
-        prompt = f"""
-You are a helpful document assistant.
-
-Use the retrieved document context to answer the question.
-
-If the answer is partially available,
-provide the best answer you can.
-
-Context:
-{context}
-
-Question:
-{question}
-
-Answer:
-"""
         with st.spinner(
             "Generating answer..."
         ):
-
-            response = chat(
-                model="llama3.2:3b",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            )
-
-            answer = (
-                response["message"]["content"]
-            )
+            result = qa_service.answer(question, top_k=3)
 
         st.subheader("Answer")
-        st.write(answer)
-
-        st.write("Sources")
-
-        pages = {result.chunk.page for result in retrieval_results}
+        st.write(result.answer)
 
         st.subheader("Sources")
 
-        for page in sorted(pages):
-            st.write(f"Page {page}")
+        sources = {
+            (evidence.chunk.filename, evidence.chunk.page)
+            for evidence in result.evidence
+        }
+        for filename, page in sorted(sources):
+            st.write(f"{filename} — Page {page}")
        
         with st.expander(
             "View Retrieved Chunks"
         ):
 
-            for i, chunk in enumerate(
-                retrieved_chunks,
+            for i, evidence in enumerate(
+                result.evidence,
                 start=1
             ):
 
@@ -123,4 +87,4 @@ Answer:
                     f"### Chunk {i}"
                 )
 
-                st.write(chunk)
+                st.write(evidence.chunk.text)

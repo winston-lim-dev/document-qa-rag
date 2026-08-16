@@ -28,3 +28,12 @@ class RetrievalResult:
 
     chunk: Chunk
     distance: float
+
+
+@dataclass(frozen=True)
+class QAResult:
+    """An answer together with the exact retrieval evidence used for it."""
+
+    answer: str
+    evidence: tuple[RetrievalResult, ...]
+    has_sufficient_evidence: bool
