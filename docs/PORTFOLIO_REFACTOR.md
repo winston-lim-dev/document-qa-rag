@@ -23,6 +23,44 @@ This refactor must therefore remain deliberately bounded.
 
 ---
 
+## Status
+
+**Completed — August 2026**
+
+The bounded portfolio refactor is complete.
+
+Final verification:
+
+- 29 automated tests passing
+- deterministic document and chunk provenance
+- idempotent Chroma indexing
+- grounded QA with explicit evidence
+- deliberate insufficient-evidence handling
+- retrieval evaluation using a fixed public-domain corpus
+- documented retrieval configuration comparison
+- thin Streamlit presentation layer
+- portfolio-focused README
+
+Retrieval evaluation results:
+
+| Configuration | Chunk Size | Overlap | Hit Rate@3 |
+|---|---:|---:|---:|
+| A | 300 | 60 | 0.92 (11/12) |
+| B | 500 | 100 | **1.00 (12/12)** |
+| C | 800 | 160 | 0.92 (11/12) |
+
+The retained default configuration is:
+
+- `chunk_size=500`
+- `chunk_overlap=100`
+- `top_k=3`
+
+The evaluation corpus is intentionally small and should not be interpreted as a comprehensive RAG benchmark.
+
+No further major development is currently planned. The project is considered **portfolio-ready and in maintenance mode**.
+
+---
+
 ## Current Baseline
 
 The current application supports:
