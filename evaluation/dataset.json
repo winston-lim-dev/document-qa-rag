@@ -1,0 +1,62 @@
+[
+  {
+    "id": "Q01",
+    "question": "What purposes does the Preamble say the Constitution was established to achieve?",
+    "expected_pages": [1]
+  },
+  {
+    "id": "Q02",
+    "question": "Which two chambers make up the United States Congress?",
+    "expected_pages": [2]
+  },
+  {
+    "id": "Q03",
+    "question": "How old must a person be to serve in the House of Representatives?",
+    "expected_pages": [2]
+  },
+  {
+    "id": "Q04",
+    "question": "Who serves as commander in chief of the Army and Navy?",
+    "expected_pages": [3]
+  },
+  {
+    "id": "Q05",
+    "question": "What citizenship, age, and residency qualifications apply to the presidency?",
+    "expected_pages": [3]
+  },
+  {
+    "id": "Q06",
+    "question": "What kinds of disputes fall under the judicial power of the United States?",
+    "expected_pages": [4]
+  },
+  {
+    "id": "Q07",
+    "question": "What evidence is required to convict someone of treason?",
+    "expected_pages": [4]
+  },
+  {
+    "id": "Q08",
+    "question": "How must states treat the public records and court proceedings of other states?",
+    "expected_pages": [5]
+  },
+  {
+    "id": "Q09",
+    "question": "What approvals are needed to form a new state from parts of existing states?",
+    "expected_pages": [5]
+  },
+  {
+    "id": "Q10",
+    "question": "How can amendments be proposed and what proportion of states must ratify them?",
+    "expected_pages": [6]
+  },
+  {
+    "id": "Q11",
+    "question": "What does the Constitution call the supreme law of the land?",
+    "expected_pages": [7]
+  },
+  {
+    "id": "Q12",
+    "question": "How many state conventions were required to establish the Constitution?",
+    "expected_pages": [8]
+  }
+]
