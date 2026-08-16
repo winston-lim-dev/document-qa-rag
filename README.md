@@ -129,6 +129,8 @@ The upload screen remains representative of the current Streamlit application:
 
 `Screenshots/answer.png` predates the current evidence display, which now includes filename, page, evidence identifier, and retrieval distance. It should be regenerated manually from a real local run before using it in a portfolio presentation.
 
+![Document QA RAG upload screen](Screenshots/answer.png)
+
 ## Engineering decisions
 
 - Document IDs are SHA-256 digests of PDF bytes, so identity is content-based rather than filename-based.
